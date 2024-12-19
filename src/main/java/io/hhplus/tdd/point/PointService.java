@@ -20,7 +20,7 @@ public class PointService {
     // 동시성 관련 콜렉션 사용
     private final ConcurrentHashMap<Long, ReentrantLock> userLocks =  new ConcurrentHashMap<>();
 
-    // 유저별 락을 검
+    // 유저별 락을 걸기위해 구현
     private ReentrantLock getLockUser(long userId){
         return userLocks.computeIfAbsent(userId, id -> new ReentrantLock());
     }
@@ -64,6 +64,7 @@ public class PointService {
             // 포인트 충전 후 업데이트
             long newAmount = userPoint.point() + amount;
 
+            // 최대 잔고를 초과한 경우
             if (newAmount > MAX_BALANCE){
                 throw new IllegalArgumentException(ErrorMessages.MAX_BALANCE_EXCEEDED);
             }
