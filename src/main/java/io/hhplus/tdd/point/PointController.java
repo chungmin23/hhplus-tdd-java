@@ -14,8 +14,7 @@ public class PointController {
 
     private static final Logger log = LoggerFactory.getLogger(PointController.class);
 
-    private final UserPointTable userPointTable = new UserPointTable();
-    private final PointHistoryTable pointHistoryTable = new PointHistoryTable();
+    private final PointService pointService = new PointService();
 
 
     /**
@@ -26,7 +25,8 @@ public class PointController {
             @PathVariable long id
     ) {
 
-        UserPoint selectUserPoint =  userPointTable.selectById(id);
+
+        UserPoint selectUserPoint =  pointService.userPoint(id);
 
         return selectUserPoint;
     }
@@ -39,8 +39,7 @@ public class PointController {
             @PathVariable long id
     ) {
 
-        return pointHistoryTable.selectAllByUserId(id);
-        //return List.of();
+        return pointService.history(id);
     }
 
     /**
@@ -52,17 +51,7 @@ public class PointController {
             @RequestBody long amount
     ) {
 
-        // 현재 사용자 포인트 조회 (없으면 기본값 반환)
-        UserPoint userPoint = userPointTable.selectById(id);
-
-        // 포인트 충전 후 업데이트
-        long newAmount = userPoint.point() + amount;
-        UserPoint updatedUserPoint = userPointTable.insertOrUpdate(id, newAmount);
-
-        // 히스토리 추가
-        pointHistoryTable.insert(id, amount, TransactionType.CHARGE, System.currentTimeMillis());
-
-        return updatedUserPoint;
+        return pointService.charge(id, amount);
     }
 
     /**
@@ -73,22 +62,8 @@ public class PointController {
             @PathVariable long id,
             @RequestBody long amount
     ) {
-        // 현재 사용자 포인트 조회 (없으면 기본값 반환)
-        UserPoint userPoint = userPointTable.selectById(id);
 
-        // 사용 가능한 포인트 확인
-        if (userPoint.point() < amount) {
-            log.error("Insufficient points for user id: {} (requested: {}, available: {})", id, amount, userPoint.point());
-            throw new IllegalArgumentException("Insufficient points.");
-        }
 
-        // 포인트 사용 후 업데이트
-        long newAmount = userPoint.point() - amount;
-        UserPoint updatedUserPoint = userPointTable.insertOrUpdate(id, newAmount);
-
-        // 히스토리 추가
-        pointHistoryTable.insert(id, -amount, TransactionType.USE, System.currentTimeMillis());
-
-        return updatedUserPoint;
+        return pointService.use(id, amount);
     }
 }
